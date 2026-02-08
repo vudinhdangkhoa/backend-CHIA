@@ -144,3 +144,5 @@ F:\Hoc\LinhTaLinhTinh\locket\server\obj\Debug\net8.0\refint\server.dll
 F:\Hoc\LinhTaLinhTinh\locket\server\obj\Debug\net8.0\server.pdb
 F:\Hoc\LinhTaLinhTinh\locket\server\obj\Debug\net8.0\server.genruntimeconfig.cache
 F:\Hoc\LinhTaLinhTinh\locket\server\obj\Debug\net8.0\ref\server.dll
+F:\Hoc\LinhTaLinhTinh\locket\server\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+F:\Hoc\LinhTaLinhTinh\locket\server\obj\Debug\net8.0\server.sourcelink.json
