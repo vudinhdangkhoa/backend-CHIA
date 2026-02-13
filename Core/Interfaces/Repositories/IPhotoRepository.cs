@@ -6,14 +6,15 @@ using server.Core.Entities;
 
 namespace server.Core.Interfaces.Repositories
 {
-    public interface IPhotoRepository : IGenericRepository<Photo>
+    public interface IPhotoRepository 
     {
         // Lấy danh sách ảnh từ danh sách bạn bè, sắp xếp mới nhất
         Task<IEnumerable<Photo>> GetFeedForUserAsync(List<Guid> friendIds, int page, int pageSize);
 
         //Lấy ảnh theo UserId
-        Task<IEnumerable<Photo>> GetPhotosByUserIdAsync(Guid userId);
-
+        Task<List<server.Services.PhotoGroup>> GetPhotosByUserIdAsync(Guid userId);
+        // Upload ảnh
+         Task<Photo> UploadPhotoAsync(Guid userId, Stream fileStream, string fileName, string caption);
         
     }
 }

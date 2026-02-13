@@ -8,29 +8,31 @@ using server.Core.Entities;
 using server.Core.Interfaces.Services;
 using server.Data;
 using server.DTO;
-
+using BCrypt.Net;
+using server.Core.Interfaces.Repositories;
 namespace server.Services
 {
     public class AuthService : IAuthServices
     {
         private readonly AppDbContext db;
         private readonly IJwtService _jwt;
-
-        public AuthService(AppDbContext db, IJwtService jwt)
+        private readonly IUserRepository _userRepository;
+        public AuthService(AppDbContext db, IJwtService jwt, IUserRepository userRepository)
         {
             this.db = db;
             _jwt = jwt;
+            _userRepository = userRepository;
         }
 
         //  Thêm tham số deviceInfo
-        public async Task<AuthResponse> LoginAsync(string phoneNumber, string password, DeviceInfo deviceInfo = null)
+        public async Task<AuthResponse> LoginAsync(string mail, string password, DeviceInfo deviceInfo = null)
         {
-            var user = await db.Users.FirstOrDefaultAsync(t => t.PhoneNumber == phoneNumber);
+            var user = await db.Users.FirstOrDefaultAsync(t => t.Mail == mail);
             if (user == null)
             {
                 throw new Exception("User not found");
             }
-            if (user.PasswordHash != password)
+            if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
             {
                 throw new Exception("Invalid password");
             }
@@ -50,7 +52,7 @@ namespace server.Services
             //  Lưu hoặc cập nhật thiết bị
             if (deviceInfo != null)
             {
-                await SaveOrUpdateDeviceAsync(user.Id, deviceInfo);
+                await _userRepository.SaveOrUpdateDeviceAsync(user.Id, deviceInfo);
             }
 
             await db.SaveChangesAsync();
@@ -64,19 +66,19 @@ namespace server.Services
         }
 
         //  Thêm tham số deviceInfo
-        public async Task<AuthResponse> RegisterAsync(string phoneNumber, string password,string username, DeviceInfo deviceInfo = null)
+        public async Task<AuthResponse> RegisterAsync(string mail, string password,string username, DeviceInfo deviceInfo = null)
         {
-            var existingUser = await db.Users.FirstOrDefaultAsync(t => t.PhoneNumber == phoneNumber);
+            var existingUser = await db.Users.FirstOrDefaultAsync(t => t.Mail == mail);
             if (existingUser != null)
             {
-                throw new Exception("Phone number already registered");
+                throw new Exception("Mail already registered");
             }
-
+            var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
             var newUser = new User
             {
                 Id = Guid.NewGuid(),
-                PhoneNumber = phoneNumber,
-                PasswordHash = password,
+                Mail = mail,
+                PasswordHash = passwordHash,
                 Username = username
             };
 
@@ -97,7 +99,7 @@ namespace server.Services
             //  Lưu thiết bị
             if (deviceInfo != null)
             {
-                await SaveOrUpdateDeviceAsync(newUser.Id, deviceInfo);
+                await _userRepository.SaveOrUpdateDeviceAsync(newUser.Id, deviceInfo);
             }
 
             await db.SaveChangesAsync();
@@ -125,7 +127,7 @@ namespace server.Services
                 Id = Guid.NewGuid(),
                 UserId = storedToken.UserId,
                 Token = _jwt.GenerateRefreshToken(),
-                ExpiresAt = DateTime.UtcNow.AddDays(30),
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -154,54 +156,20 @@ namespace server.Services
             }
         }
 
-        //  Helper method để lưu/update device
-        private async Task SaveOrUpdateDeviceAsync(Guid userId, DeviceInfo deviceInfo)
+        
+
+        public async Task<AuthResponse> RegisterAsync(string mail, string password)
         {
-            // Tìm device cũ theo FCM token hoặc device identifier
-            var existingDevice = await db.UserDevices
-                .FirstOrDefaultAsync(d => 
-                    d.UserId == userId && 
-                    d.FcmToken == deviceInfo.FcmToken);
-
-            if (existingDevice != null)
-            {
-                // Cập nhật device cũ
-                existingDevice.DeviceId = deviceInfo.DeviceName;
-                existingDevice.Platform = deviceInfo.Platform;
-                existingDevice.LastActiveAt = DateTime.UtcNow;
-                
-            }
-            else
-            {
-                // Tạo device mới
-                var newDevice = new UserDevice
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = userId,
-                    DeviceId = deviceInfo.DeviceName,
-                    FcmToken = deviceInfo.FcmToken,
-                    Platform = deviceInfo.Platform,
-                    LastActiveAt = DateTime.UtcNow,
-                   
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                await db.UserDevices.AddAsync(newDevice);
-            }
-        }
-
-        public async Task<AuthResponse> RegisterAsync(string phoneNumber, string password)
-        {
-            var existingUser = await db.Users.FirstOrDefaultAsync(t => t.PhoneNumber == phoneNumber);
+            var existingUser = await db.Users.FirstOrDefaultAsync(t => t.Mail == mail);
             if (existingUser != null)
             {
-                throw new Exception("Phone number already registered");
+                throw new Exception("Mail already registered");
             }
 
             var newUser = new User
             {
                 Id = Guid.NewGuid(),
-                PhoneNumber = phoneNumber,
+                Mail = mail,
                 PasswordHash = password
             };
 

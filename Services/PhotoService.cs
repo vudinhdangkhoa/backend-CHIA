@@ -2,19 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using server.Core.Entities;
+using server.Core.Interfaces.Repositories;
 using server.Core.Interfaces.Services;
 using server.Data;
 
 namespace server.Services
 {
 
-    public interface IPhotoService
-    {
-        Task<Photo> UploadPhotoAsync(Guid userId, Stream fileStream, string fileName, string caption);
-    }
 
-    public class PhotoService : IPhotoService
+
+    public class PhotoService : IPhotoRepository
     {
 
         private readonly AppDbContext db;
@@ -36,12 +35,17 @@ namespace server.Services
 
             if (fileStream == null || fileStream.Length == 0)
             {
-                return null;
                 throw new Exception("file is empty");
 
             }
 
             var photoUrl = await _storage.UploadFileAsync(fileStream, fileName, server.Core.Enum.ContentType.image);
+
+            if (photoUrl == null)
+            {
+
+                throw new Exception("upload file failed");
+            }
 
             var Photo = new Photo
             {
@@ -59,5 +63,41 @@ namespace server.Services
 
             return Photo;
         }
+
+        public async Task<List<PhotoGroup>> GetPhotosByUserIdAsync(Guid userId)
+        {
+            var photos = await db.Photos
+                .Where(p => p.SenderId == userId)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+
+            return photos
+                .GroupBy(p => p.CreatedAt.Date)
+                .OrderByDescending(g => g.Key)
+                .Select(g => new PhotoGroup
+                {
+                    Date = g.Key,
+                    Photos = g.ToList()
+                })
+                .ToList();
+        }
+
+
+
+        public async Task<IEnumerable<Photo>> GetFeedForUserAsync(List<Guid> friendIds, int page, int pageSize)
+        {
+            return await db.Photos
+                .Where(p => friendIds.Contains(p.SenderId))
+                .OrderByDescending(p => p.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+    }
+    // DTO class
+    public class PhotoGroup
+    {
+        public DateTime Date { get; set; }
+        public List<Photo> Photos { get; set; }
     }
 }

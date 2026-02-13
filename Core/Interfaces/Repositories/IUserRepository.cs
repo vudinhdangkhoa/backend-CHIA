@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using server.Core.Entities;
+using server.DTO;
 
 namespace server.Core.Interfaces.Repositories
 {
@@ -12,7 +13,7 @@ namespace server.Core.Interfaces.Repositories
         Task<List<string>> GetFcmTokensAsync(Guid userId);
 
         // Hàm xử lý khi user đăng nhập (Lưu token mới)
-        Task AddOrUpdateDeviceAsync(Guid userId, string fcmToken, string deviceId);
+        Task SaveOrUpdateDeviceAsync(Guid userId, DeviceInfo deviceInfo);
 
         // Hàm xử lý khi user đăng xuất (Xóa token để không push nhầm nữa)
         Task RemoveDeviceAsync(string fcmToken);

@@ -8,7 +8,7 @@ namespace server.Core.Entities
 {
     public class User : BaseEntity
     {
-        public string PhoneNumber { get; set; }
+        public string Mail { get; set; }
         public string Username { get; set; }
         public string AvatarUrl { get; set; }
         public string Bio { get; set; }

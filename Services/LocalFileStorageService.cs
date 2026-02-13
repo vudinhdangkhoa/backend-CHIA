@@ -19,7 +19,42 @@ namespace server.Services
         public async Task<string>UploadFileAsync(Stream fileStream, string fileName, string contentType)
         {
             
-            var uploadPath = Path.Combine(_env.WebRootPath, "uploadsPhotos");
+            if(contentType != server.Core.Enum.ContentType.image.ToString() && contentType != server.Core.Enum.ContentType.video.ToString())
+            {
+                throw new Exception("Unsupported content type");
+            }
+            if (fileStream == null || fileStream.Length == 0)
+            {
+                throw new Exception("File is empty");
+            }
+            if (string.IsNullOrEmpty(fileName))
+            {
+                throw new Exception("File name is required");
+            }
+
+            string uploadPath ="";
+
+            if(contentType == server.Core.Enum.ContentType.image.ToString())
+            {
+                var allowedImageExtensions = new List<string> { ".jpg", ".jpeg", ".png", ".gif" };
+                var fileExtension = Path.GetExtension(fileName).ToLower();
+                if (!allowedImageExtensions.Contains(fileExtension))
+                {
+                    throw new Exception("Invalid image file extension");
+                }
+                uploadPath = Path.Combine(_env.WebRootPath, "uploadsPhotos");
+            }
+            else if(contentType == server.Core.Enum.ContentType.video.ToString())
+            {
+                var allowedVideoExtensions = new List<string> { ".mp4", ".avi", ".mov", ".wmv" };
+                var fileExtension = Path.GetExtension(fileName).ToLower();
+                if (!allowedVideoExtensions.Contains(fileExtension))
+                {
+                    throw new Exception("Invalid video file extension");
+                }
+                uploadPath = Path.Combine(_env.WebRootPath, "uploadsVideos");
+            }
+            
 
             if (!Directory.Exists(uploadPath))
             {
@@ -34,7 +69,7 @@ namespace server.Services
                 await fileStream.CopyToAsync(Stream);
             }
     
-            return $"/uploadsPhotos/{uniqueFileName}";
+            return $"/uploads{contentType}/{uniqueFileName}";
         }
 
         public async Task DeleteFileAsync(string fileUrl)

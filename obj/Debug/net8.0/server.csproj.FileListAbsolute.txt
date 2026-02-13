@@ -146,3 +146,4 @@ F:\Hoc\LinhTaLinhTinh\locket\server\obj\Debug\net8.0\server.genruntimeconfig.cac
 F:\Hoc\LinhTaLinhTinh\locket\server\obj\Debug\net8.0\ref\server.dll
 F:\Hoc\LinhTaLinhTinh\locket\server\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 F:\Hoc\LinhTaLinhTinh\locket\server\obj\Debug\net8.0\server.sourcelink.json
+F:\Hoc\LinhTaLinhTinh\locket\server\bin\Debug\net8.0\BCrypt.Net-Next.dll
