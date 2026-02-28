@@ -84,14 +84,24 @@ namespace server.Services
 
 
 
-        public async Task<IEnumerable<Photo>> GetFeedForUserAsync(List<Guid> friendIds, int page, int pageSize)
+        public async Task<IEnumerable<PhotoDto>> GetFeedForUserAsync(List<Guid> friendIds, int page, int pageSize)
         {
+
             return await db.Photos
-                .Where(p => friendIds.Contains(p.SenderId))
-                .OrderByDescending(p => p.CreatedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+            .AsNoTracking() // Tối ưu hiệu năng
+            .Where(p => friendIds.Contains(p.SenderId))
+            .OrderByDescending(p => p.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(p => new PhotoDto
+            {
+                Id = p.Id,
+                ImageUrl = p.ImageUrl,
+                Caption = p.Caption,
+                SenderName = p.Sender.Username, // Join tự động qua EF
+                CreatedAt = p.CreatedAt
+            })
+            .ToListAsync();
         }
     }
     // DTO class
@@ -99,5 +109,14 @@ namespace server.Services
     {
         public DateTime Date { get; set; }
         public List<Photo> Photos { get; set; }
+    }
+
+    public class PhotoDto
+    {
+        public Guid Id { get; set; }
+        public string ImageUrl { get; set; }
+        public string Caption { get; set; }
+        public string SenderName { get; set; }
+        public DateTime CreatedAt { get; set; }
     }
 }

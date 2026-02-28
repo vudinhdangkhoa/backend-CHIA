@@ -34,6 +34,7 @@ builder.Services.AddScoped<IAuthServices, AuthService>();
 builder.Services.AddScoped<IPhotoRepository, PhotoService>();
 builder.Services.AddScoped<IUserRepository, UserServices>();
 builder.Services.AddScoped<IStorageService, LocalFileStorageService>();
+builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 
 // ✅ Add Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -68,8 +69,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-// app.UseAuthentication();
-// app.UseAuthorization();
+ app.UseAuthentication();
+ app.UseAuthorization();
 
 var summaries = new[]
 {

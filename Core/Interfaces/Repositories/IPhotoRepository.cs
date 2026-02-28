@@ -9,7 +9,7 @@ namespace server.Core.Interfaces.Repositories
     public interface IPhotoRepository 
     {
         // Lấy danh sách ảnh từ danh sách bạn bè, sắp xếp mới nhất
-        Task<IEnumerable<Photo>> GetFeedForUserAsync(List<Guid> friendIds, int page, int pageSize);
+        Task<IEnumerable<server.Services.PhotoDto>> GetFeedForUserAsync(List<Guid> friendIds, int page, int pageSize);
 
         //Lấy ảnh theo UserId
         Task<List<server.Services.PhotoGroup>> GetPhotosByUserIdAsync(Guid userId);

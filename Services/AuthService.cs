@@ -17,11 +17,13 @@ namespace server.Services
         private readonly AppDbContext db;
         private readonly IJwtService _jwt;
         private readonly IUserRepository _userRepository;
-        public AuthService(AppDbContext db, IJwtService jwt, IUserRepository userRepository)
+        private readonly IPasswordHasher _passwordHasher;
+        public AuthService(AppDbContext db, IJwtService jwt, IUserRepository userRepository, IPasswordHasher passwordHasher)
         {
             this.db = db;
             _jwt = jwt;
             _userRepository = userRepository;
+            _passwordHasher = passwordHasher;
         }
 
         //  Thêm tham số deviceInfo
@@ -32,7 +34,7 @@ namespace server.Services
             {
                 throw new Exception("User not found");
             }
-            if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+            if (!_passwordHasher.Verify(password, user.PasswordHash))
             {
                 throw new Exception("Invalid password");
             }
@@ -73,7 +75,7 @@ namespace server.Services
             {
                 throw new Exception("Mail already registered");
             }
-            var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
+            var passwordHash = _passwordHasher.Hash(password);
             var newUser = new User
             {
                 Id = Guid.NewGuid(),
@@ -158,43 +160,7 @@ namespace server.Services
 
         
 
-        public async Task<AuthResponse> RegisterAsync(string mail, string password)
-        {
-            var existingUser = await db.Users.FirstOrDefaultAsync(t => t.Mail == mail);
-            if (existingUser != null)
-            {
-                throw new Exception("Mail already registered");
-            }
-
-            var newUser = new User
-            {
-                Id = Guid.NewGuid(),
-                Mail = mail,
-                PasswordHash = password
-            };
-
-            await db.Users.AddAsync(newUser);
-            await db.SaveChangesAsync();
-
-            var accessToken = _jwt.GenerateAccessToken(newUser);
-            var refreshToken = new RefreshToken
-            {
-                Id = Guid.NewGuid(),
-                UserId = newUser.Id,
-                Token = _jwt.GenerateRefreshToken(),
-                CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddDays(7)
-            };
-
-            await db.RefreshTokens.AddAsync(refreshToken);
-            await db.SaveChangesAsync();
-
-            return new AuthResponse{
-                AccessToken = accessToken,
-                RefreshToken = refreshToken.Token,
-                UserId = newUser.Id
-            };
-        }
+        
 
     }
 }
