@@ -7,6 +7,9 @@ using server.Core.Entities;
 using server.Core.Interfaces.Repositories;
 using server.Core.Interfaces.Services;
 using server.Data;
+using Microsoft.AspNetCore.SignalR;
+using server.Services.Hubs;
+
 
 namespace server.Services
 {
@@ -19,11 +22,17 @@ namespace server.Services
         private readonly AppDbContext db;
         private readonly IStorageService _storage;
         // private readonly INotificationService _noti; // Để làm thông báo
+        private readonly IHubContext<FeedHub> _hubContext;
+        private readonly IFriendshipRepository friendshipRepository;
 
-        public PhotoService(AppDbContext context, IStorageService storage)
+        private readonly INotificationService notificationService;
+
+        public PhotoService(AppDbContext context, IStorageService storage, IHubContext<FeedHub> hubContext, IFriendshipRepository friendRepository)
         {
             db = context;
             _storage = storage;
+            _hubContext = hubContext;
+            friendshipRepository = friendRepository;
         }
 
         public async Task<Photo> UploadPhotoAsync(Guid userId, Stream fileStream, string fileName, string caption)
@@ -59,7 +68,17 @@ namespace server.Services
             await db.Photos.AddAsync(Photo);
             await db.SaveChangesAsync();
 
-            //gửi thông báo đến bạn bè ở đây
+            //gửi thông báo đến bạn bè 
+            
+            // Lấy list friendIds của userId
+            var friendIds = await friendshipRepository.GetFriendIdsAsync(userId);
+            // Gửi notification qua SignalR và FCM
+            await notificationService.SendPhotoNotificationAsync(userId, checkUserExist.Username, friendIds, new
+            {
+                ImageUrl = Photo.ImageUrl,
+                Caption = Photo.Caption,
+                createdAt= Photo.CreatedAt
+            });
 
             return Photo;
         }

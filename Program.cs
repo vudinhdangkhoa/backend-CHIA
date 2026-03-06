@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using server.Services;
 using server.Core.Interfaces.Repositories;
+using server.Services.Hubs;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -28,7 +29,7 @@ builder.Services.AddSignalR();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// ✅ Register JWT & Auth Services
+// Injection Services
 builder.Services.AddScoped<IJwtService, JwtServices>();
 builder.Services.AddScoped<IAuthServices, AuthService>();
 builder.Services.AddScoped<IPhotoRepository, PhotoService>();
@@ -36,7 +37,7 @@ builder.Services.AddScoped<IUserRepository, UserServices>();
 builder.Services.AddScoped<IStorageService, LocalFileStorageService>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 
-// ✅ Add Authentication
+//  Register JWT & Auth Services
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -51,6 +52,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = builder.Configuration["Jwt:Audience"],
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/feed"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -69,9 +84,11 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
- app.UseAuthentication();
- app.UseAuthorization();
+app.UseAuthentication();
+app.UseAuthorization();
 
+// Map Hub vào endpoint cụ thể
+app.MapHub<FeedHub>("/hubs/feed");
 var summaries = new[]
 {
     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"

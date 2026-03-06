@@ -84,7 +84,7 @@ namespace server.Services
                 Username = username
             };
 
-            await db.Users.AddAsync(newUser);
+            await _userRepository.AddAsync(newUser);
 
             var accessToken = _jwt.GenerateAccessToken(newUser);
             var refreshToken = new RefreshToken
