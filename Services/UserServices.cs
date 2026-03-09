@@ -10,17 +10,17 @@ using server.DTO;
 
 namespace server.Services
 {
-    public class UserServices: IUserRepository
+    public class UserServices : IUserRepository
     {
-        
+
         private readonly AppDbContext _context;
 
         public UserServices(AppDbContext context)
         {
             _context = context;
-        }    
+        }
 
-         public async Task<IEnumerable<User>> FindAsync(System.Linq.Expressions.Expression<Func<User, bool>> predicate)
+        public async Task<IEnumerable<User>> FindAsync(System.Linq.Expressions.Expression<Func<User, bool>> predicate)
         {
             return await _context.Users.Where(predicate).ToListAsync();
         }
@@ -60,10 +60,12 @@ namespace server.Services
 
         public async Task SaveOrUpdateDeviceAsync(Guid userId, DeviceInfo deviceInfo)
         {
+            Console.WriteLine("_context null? " + (_context == null));
+            Console.WriteLine("deviceInfo null? " + (deviceInfo == null));
             // Tìm device cũ theo FCM token hoặc device identifier
             var existingDevice = await _context.UserDevices
-                .FirstOrDefaultAsync(d => 
-                    d.UserId == userId && 
+                .FirstOrDefaultAsync(d =>
+                    d.UserId == userId &&
                     d.FcmToken == deviceInfo.FcmToken);
 
             if (existingDevice != null)
@@ -72,7 +74,7 @@ namespace server.Services
                 existingDevice.DeviceId = deviceInfo.DeviceName;
                 existingDevice.Platform = deviceInfo.Platform;
                 existingDevice.LastActiveAt = DateTime.UtcNow;
-                
+
             }
             else
             {
@@ -85,7 +87,7 @@ namespace server.Services
                     FcmToken = deviceInfo.FcmToken,
                     Platform = deviceInfo.Platform,
                     LastActiveAt = DateTime.UtcNow,
-                   
+
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -93,7 +95,7 @@ namespace server.Services
             }
         }
 
-         // Hàm hỗ trợ lấy list token của 1 user
+        // Hàm hỗ trợ lấy list token của 1 user
         public async Task<List<string>> GetFcmTokensAsync(Guid userId)
         {
             return await _context.UserDevices

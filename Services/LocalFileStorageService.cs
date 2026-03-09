@@ -42,7 +42,7 @@ namespace server.Services
                 {
                     throw new Exception("Invalid image file extension");
                 }
-                uploadPath = Path.Combine(_env.WebRootPath, "uploadsPhotos");
+                uploadPath = Path.Combine(_env.WebRootPath, $"uploads{contentType}");
             }
             else if(contentType == server.Core.Enum.ContentType.video.ToString())
             {
@@ -52,7 +52,7 @@ namespace server.Services
                 {
                     throw new Exception("Invalid video file extension");
                 }
-                uploadPath = Path.Combine(_env.WebRootPath, "uploadsVideos");
+                uploadPath = Path.Combine(_env.WebRootPath, $"uploads{contentType}");
             }
             
 

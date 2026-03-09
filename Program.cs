@@ -8,10 +8,21 @@ using System.Text;
 using server.Services;
 using server.Core.Interfaces.Repositories;
 using server.Services.Hubs;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+if (FirebaseApp.DefaultInstance == null)
+{
+    FirebaseApp.Create(new AppOptions()
+    {
+        Credential = GoogleCredential.FromFile("locket-clone-3c877-firebase-adminsdk-fbsvc-5d2a96b874.json")
+    });
+}
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -36,6 +47,7 @@ builder.Services.AddScoped<IPhotoRepository, PhotoService>();
 builder.Services.AddScoped<IUserRepository, UserServices>();
 builder.Services.AddScoped<IStorageService, LocalFileStorageService>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+builder.Services.AddScoped<IFriendshipRepository, FriendshipService>();
 
 //  Register JWT & Auth Services
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -81,7 +93,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseAuthentication();

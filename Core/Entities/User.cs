@@ -10,8 +10,8 @@ namespace server.Core.Entities
     {
         public string Mail { get; set; }
         public string Username { get; set; }
-        public string AvatarUrl { get; set; }
-        public string Bio { get; set; }
+        public string? AvatarUrl { get; set; }
+        public string? Bio { get; set; }
         public string PasswordHash { get; set; } // Lưu hash của mật khẩu, không lưu mật khẩu gốc
                                                  
         public ICollection<UserDevice> Devices { get; set; }=new List<UserDevice>(); // Token này thay đổi mỗi lần đăng nhập thiết bị mới

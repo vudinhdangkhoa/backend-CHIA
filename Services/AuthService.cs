@@ -27,7 +27,7 @@ namespace server.Services
         }
 
         //  Thêm tham số deviceInfo
-        public async Task<AuthResponse> LoginAsync(string mail, string password, DeviceInfo deviceInfo = null)
+        public async Task<AuthResponse> LoginAsync(string mail, string password, DeviceInfo deviceInfo )
         {
             var user = await db.Users.FirstOrDefaultAsync(t => t.Mail == mail);
             if (user == null)
@@ -68,13 +68,28 @@ namespace server.Services
         }
 
         //  Thêm tham số deviceInfo
-        public async Task<AuthResponse> RegisterAsync(string mail, string password,string username, DeviceInfo deviceInfo = null)
+        public async Task<AuthResponse> RegisterAsync(string mail, string password,string username, DeviceInfo deviceInfo )
         {
+            Console.WriteLine("AuthService.RegisterAsync called with deviceInfo: " + (deviceInfo != null ? $"DeviceName={deviceInfo.DeviceName}, Platform={deviceInfo.Platform}, FcmToken={deviceInfo.FcmToken}" : "null"));
+            if(deviceInfo==null)
+            {
+                throw new Exception("Device information is required");
+            }
+            if(string.IsNullOrEmpty(username))
+            {
+                throw new Exception("Username is required");
+            }
+            if(mail == null || password == null)
+            {
+                throw new Exception("Mail and password are required");
+            }
             var existingUser = await db.Users.FirstOrDefaultAsync(t => t.Mail == mail);
             if (existingUser != null)
             {
                 throw new Exception("Mail already registered");
             }
+            
+
             var passwordHash = _passwordHasher.Hash(password);
             var newUser = new User
             {
@@ -84,7 +99,14 @@ namespace server.Services
                 Username = username
             };
 
-            await _userRepository.AddAsync(newUser);
+            try
+            {
+                await _userRepository.AddAsync(newUser);
+               
+            }catch (Exception ex)
+            {
+                throw new Exception($"Error creating user: {ex.Message}");
+            }
 
             var accessToken = _jwt.GenerateAccessToken(newUser);
             var refreshToken = new RefreshToken

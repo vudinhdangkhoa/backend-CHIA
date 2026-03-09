@@ -15,10 +15,17 @@ namespace server.Controllers
     public class AuthController : ControllerBase
     {
 
-        private readonly JwtServices _jwtServices;
+        private readonly IJwtService _jwtServices;
         private readonly AppDbContext _dbContext;
 
         private readonly IAuthServices _authService;
+
+        public AuthController(AppDbContext dbContext, IAuthServices authService, IJwtService jwtServices)
+        {
+            _dbContext = dbContext;
+            _authService = authService;
+            _jwtServices = jwtServices;
+        }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] DTO.LoginRequest request)
@@ -42,9 +49,9 @@ namespace server.Controllers
              var AuthResponse = await _authService.LoginAsync(request.Mail, request.Password, request.DeviceInfo);
              return Ok(new { AuthResponse, Message = "Đăng nhập thành công" });
            }
-           catch (System.Exception)
+           catch (System.Exception ex)
            {
-            return BadRequest(new { Message = "Đăng nhập thất bại" });
+            return BadRequest(new { Message = "Đăng nhập thất bại: " + ex.Message });
             throw;
            }
 
@@ -59,7 +66,7 @@ namespace server.Controllers
             {
                 return BadRequest(new { Message = "Invalid request" });
             }
-
+            Console.WriteLine("request: " + request.Mail + " - " + request.Password + " - " + request.Username+ "-" + request.DeviceInfo.DeviceName+ "-" + request.DeviceInfo.Platform+ "-" + request.DeviceInfo.FcmToken);
             if (string.IsNullOrEmpty(request.Mail) || string.IsNullOrEmpty(request.Password) || string.IsNullOrEmpty(request.Username))
             {
                 return BadRequest(new { Message = "Mail, mật khẩu và tên người dùng là bắt buộc" });
@@ -68,12 +75,16 @@ namespace server.Controllers
             // Call the AuthService to handle registration
            try
            {
-             var authResponse = await _authService.RegisterAsync(request.Mail, request.Password, request.Username);
-                return Ok(new{ authResponse, Message = "Đăng ký thành công" });
+            Console.WriteLine("call services");
+            Console.WriteLine("DeviceInfo: " + (request.DeviceInfo != null ? $"DeviceName={request.DeviceInfo.DeviceName}, Platform={request.DeviceInfo.Platform}, FcmToken={request.DeviceInfo.FcmToken}" : "null"));
+            Console.WriteLine("_authService null? " + (_authService == null));
+            var authResponse = await _authService.RegisterAsync(request.Mail, request.Password, request.Username,request.DeviceInfo);
+                return Ok(new{  Message = "Đăng ký thành công" });
            }
-           catch (System.Exception)
+           catch (System.Exception ex)
            {
-            return BadRequest(new { Message = "Đăng ký thất bại" });
+            Console.WriteLine("Error in AuthController.Register: " + ex.Message);
+            return BadRequest(new { Message = $"Đăng ký thất bại: {ex.Message}" });
             throw;
            }
 
